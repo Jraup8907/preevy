@@ -4,7 +4,7 @@ import path from 'path'
 import pino from 'pino'
 import fs from 'fs'
 import { createPublicKey } from 'crypto'
-import { app as createApp } from './src/app'
+import { createApp } from './src/app'
 import { activeTunnelStoreKey, inMemoryActiveTunnelStore } from './src/tunnel-store'
 import { getSSHKeys } from './src/ssh-keys'
 import { proxy } from './src/proxy'
@@ -47,21 +47,22 @@ const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
 const activeTunnelStore = inMemoryActiveTunnelStore({ log })
 const sessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
 const loginUrl = new URL('/login', editUrl(BASE_URL, { hostname: `auth.${BASE_URL.hostname}` })).toString()
-const app = createApp({
+const app = await createApp({
   sessionStore,
   activeTunnelStore,
   baseUrl: BASE_URL,
+  saasBaseUrl: new URL(requiredEnv('SAAS_BASE_URL')),
   proxy: proxy({
     activeTunnelStore,
     log,
-    loginUrl,
+    loginUrl: new URL(loginUrl),
     sessionStore,
     saasPublicKey,
     jwtSaasIssuer: SAAS_JWT_ISSUER,
     baseHostname: BASE_URL.hostname,
   }),
   log,
-  loginUrl,
+  loginUrl: new URL(loginUrl),
   jwtSaasIssuer: SAAS_JWT_ISSUER,
   saasPublicKey,
 })

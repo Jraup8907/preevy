@@ -12,15 +12,7 @@ import { SessionStore } from '../session'
 import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from '../http-server-helpers'
 import { TunnelFinder, proxyRouter } from './router'
 import { proxyInjectionHandlers } from './injection'
-
-const loginRedirectUrl = (loginUrl: string) => ({ env, returnPath }: { env: string; returnPath?: string }) => {
-  const url = new URL(loginUrl)
-  url.searchParams.set('env', env)
-  if (returnPath) {
-    url.searchParams.set('returnPath', returnPath)
-  }
-  return url.toString()
-}
+import { calcLoginUrl } from '../app/urls'
 
 const hasBasicAuthQueryParamHint = (url: string) =>
   new URL(url, 'http://a').searchParams.get('_preevy_auth_hint') === 'basic'
@@ -36,7 +28,7 @@ export const proxy = ({
 }: {
   sessionStore: SessionStore<Claims>
   activeTunnelStore: ActiveTunnelStore
-  loginUrl: string
+  loginUrl: URL
   baseHostname: string
   log: Logger
   saasPublicKey: KeyObject
@@ -47,7 +39,7 @@ export const proxy = ({
   theProxy.on('proxyRes', injectionHandlers.proxyResHandler)
   theProxy.on('proxyReq', injectionHandlers.proxyReqHandler)
 
-  const loginRedirectUrlForRequest = loginRedirectUrl(loginUrl)
+  const loginRedirectUrlForRequest = calcLoginUrl({ loginUrl })
   const saasIdp = saasIdentityProvider(jwtSaasIssuer, saasPublicKey)
 
   const validatePrivateTunnelRequest = async (

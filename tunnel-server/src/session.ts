@@ -2,6 +2,8 @@ import { IncomingMessage, ServerResponse } from 'http'
 import Cookies from 'cookies'
 import { randomBytes } from 'crypto'
 import * as z from 'zod'
+import { inspect } from 'util'
+import { groupBy } from 'lodash'
 
 // for testing, for production workload use the env var COOKIE_SECRETS
 function generateInsecureSecret() {
@@ -23,6 +25,7 @@ export function cookieSessionStore<T>(opts: {domain: string; schema: z.ZodSchema
     })
     const data = cookies.get(`preevy-${thumbprint}`, { signed: true })
     let currentUser = data ? opts.schema.parse(JSON.parse(data)) : undefined
+    console.log('got cookie', thumbprint, data, currentUser)
 
     return {
       get user() { return currentUser },
